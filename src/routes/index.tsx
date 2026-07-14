@@ -8,7 +8,6 @@ import {
   Sun,
   Check,
   Sparkles,
-  X,
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -356,5 +355,3 @@ function FavoritesDialog({
   );
 }
 
-// Suppress unused-import warning for X in some environments
-void X;
