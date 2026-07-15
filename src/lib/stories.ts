@@ -254,7 +254,10 @@ export const ALL_INTERESTS: Interest[] = [
 
 export const ALL_AGE_RANGES: AgeRange[] = ["Under 18", "18-25", "26-40", "41+"];
 
-export function formatStory(s: Story): string {
+export function formatStory(s: Story, lang: Lang = "en"): string {
+  if (lang === "es") {
+    return `${s.person}, a quien ${s.skeptic} le dijo "no ${s.lowExpectation}", terminó por ${s.achievement}. Su consejo: "${s.quote}"`;
+  }
   return `${s.person}, who was told by ${s.skeptic} that "you'll never ${s.lowExpectation}", went on to ${s.achievement}. Their advice: "${s.quote}"`;
 }
 
