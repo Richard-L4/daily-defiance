@@ -7,6 +7,8 @@ export type Interest =
 
 export type AgeRange = "Under 18" | "18-25" | "26-40" | "41+";
 
+export type Lang = "en" | "es";
+
 export interface Story {
   id: string;
   person: string;
@@ -19,7 +21,7 @@ export interface Story {
   theme: "dawn" | "ember" | "forest" | "ocean" | "violet";
 }
 
-export const STORIES: Story[] = [
+export const STORIES_EN: Story[] = [
   {
     id: "einstein",
     person: "Albert Einstein",
