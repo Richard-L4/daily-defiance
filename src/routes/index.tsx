@@ -18,16 +18,95 @@ import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { useLocalStorage } from "@/lib/use-local-storage";
 import {
-  STORIES,
   ALL_INTERESTS,
   ALL_AGE_RANGES,
+  getStories,
   type AgeRange,
   type Interest,
+  type Lang,
   type Story,
   formatStory,
   pickStory,
   todayKey,
 } from "@/lib/stories";
+
+const I18N = {
+  en: {
+    brand: "Defy the Odds",
+    toggleTheme: "Toggle theme",
+    favorites: "Favorites",
+    settings: "Settings",
+    language: "Language",
+    todaysStory: "Today's story",
+    told: ", who was told by ",
+    thatQuoted: " that",
+    youllNever: "\"you'll never ",
+    wentOn: " went on to ",
+    share: "Share",
+    saved: "Saved",
+    save: "Save",
+    revealNext: "Reveal another →",
+    footer: "One story a day. Come back tomorrow.",
+    yourRitual: "Your ritual",
+    ritualDesc: "We'll tune each day's story to fit you. Saved on this device.",
+    ageRange: "Age range",
+    interests: "Interests",
+    yourLibrary: "Your library",
+    emptyLib: "Nothing saved yet. Tap the heart on a story you love.",
+    savedStory: (n: number) => `${n} saved ${n === 1 ? "story" : "stories"}.`,
+    remove: "Remove",
+    toastSaved: "Saved to favorites",
+    toastRemoved: "Removed from favorites",
+    toastCopied: "Copied to clipboard",
+    toastCopyFail: "Couldn't copy — try again",
+    shareTag: "— via Defy the Odds",
+  },
+  es: {
+    brand: "Desafía las Probabilidades",
+    toggleTheme: "Cambiar tema",
+    favorites: "Favoritos",
+    settings: "Ajustes",
+    language: "Idioma",
+    todaysStory: "Historia de hoy",
+    told: ", a quien ",
+    thatQuoted: " le dijo",
+    youllNever: "\"no ",
+    wentOn: " terminó por ",
+    share: "Compartir",
+    saved: "Guardada",
+    save: "Guardar",
+    revealNext: "Ver otra →",
+    footer: "Una historia al día. Vuelve mañana.",
+    yourRitual: "Tu ritual",
+    ritualDesc: "Ajustaremos la historia diaria a ti. Guardado en este dispositivo.",
+    ageRange: "Rango de edad",
+    interests: "Intereses",
+    yourLibrary: "Tu biblioteca",
+    emptyLib: "Nada guardado aún. Toca el corazón en una historia que te guste.",
+    savedStory: (n: number) => `${n} ${n === 1 ? "historia guardada" : "historias guardadas"}.`,
+    remove: "Quitar",
+    toastSaved: "Añadida a favoritos",
+    toastRemoved: "Quitada de favoritos",
+    toastCopied: "Copiado al portapapeles",
+    toastCopyFail: "No se pudo copiar — inténtalo de nuevo",
+    shareTag: "— vía Desafía las Probabilidades",
+  },
+} as const;
+
+const INTEREST_ES: Record<Interest, string> = {
+  "Science & Tech": "Ciencia y Tecnología",
+  "Sports": "Deportes",
+  "Arts & Literature": "Arte y Literatura",
+  "Business & Entrepreneurship": "Negocios y Emprendimiento",
+  "Politics & Leadership": "Política y Liderazgo",
+};
+
+const AGE_ES: Record<AgeRange, string> = {
+  "Under 18": "Menos de 18",
+  "18-25": "18-25",
+  "26-40": "26-40",
+  "41+": "41+",
+};
 
 export const Route = createFileRoute("/")({
   component: Index,
@@ -48,6 +127,7 @@ interface Profile {
 
 function Index() {
   const [dark, setDark] = useLocalStorage<boolean>("dto:dark", false);
+  const [lang, setLang] = useLocalStorage<Lang>("dto:lang", "en");
   const [profile, setProfile] = useLocalStorage<Profile>("dto:profile", {
     age: null,
     interests: [],
@@ -57,6 +137,7 @@ function Index() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [favOpen, setFavOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const t = I18N[lang];
 
   useEffect(() => setMounted(true), []);
 
@@ -68,10 +149,10 @@ function Index() {
 
   const story = useMemo<Story>(() => {
     const key = todayKey() + "#" + seed;
-    return pickStory(key, profile.interests, profile.age);
-  }, [profile, seed]);
+    return pickStory(key, profile.interests, profile.age, undefined, lang);
+  }, [profile, seed, lang]);
 
-  const dateLabel = new Date().toLocaleDateString(undefined, {
+  const dateLabel = new Date().toLocaleDateString(lang === "es" ? "es-ES" : undefined, {
     weekday: "long",
     month: "long",
     day: "numeric",
@@ -84,14 +165,14 @@ function Index() {
     setFavorites((prev) =>
       prev.includes(story.id) ? prev.filter((x) => x !== story.id) : [...prev, story.id],
     );
-    toast(isFavorite ? "Removed from favorites" : "Saved to favorites");
+    toast(isFavorite ? t.toastRemoved : t.toastSaved);
   };
 
   const share = async () => {
-    const text = formatStory(story) + "\n\n— via Defy the Odds";
+    const text = formatStory(story, lang) + "\n\n" + t.shareTag;
     if (typeof navigator !== "undefined" && (navigator as Navigator).share) {
       try {
-        await (navigator as Navigator).share({ title: "Defy the Odds", text });
+        await (navigator as Navigator).share({ title: t.brand, text });
         return;
       } catch {
         /* fall through to copy */
@@ -99,9 +180,9 @@ function Index() {
     }
     try {
       await navigator.clipboard.writeText(text);
-      toast("Copied to clipboard");
+      toast(t.toastCopied);
     } catch {
-      toast("Couldn't copy — try again");
+      toast(t.toastCopyFail);
     }
   };
 
@@ -118,17 +199,18 @@ function Index() {
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-primary" />
             <span className="text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">
-              Defy the Odds
+              {t.brand}
             </span>
           </div>
           <div className="flex items-center gap-1">
+            <LangToggle lang={lang} onChange={setLang} />
             <IconButton onClick={() => setDark(!dark)} label="Toggle theme">
               {mounted && dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </IconButton>
-            <IconButton onClick={() => setFavOpen(true)} label="Favorites">
+            <IconButton onClick={() => setFavOpen(true)} label={t.favorites}>
               <Heart className="h-4 w-4" />
             </IconButton>
-            <IconButton onClick={() => setSettingsOpen(true)} label="Settings">
+            <IconButton onClick={() => setSettingsOpen(true)} label={t.settings}>
               <SettingsIcon className="h-4 w-4" />
             </IconButton>
           </div>
@@ -140,16 +222,16 @@ function Index() {
             {dateLabel}
           </p>
           <p className="mt-3 font-serif text-sm italic text-muted-foreground">
-            Today's story
+            {t.todaysStory}
           </p>
 
           <h1 className="mt-8 font-serif text-4xl font-light leading-[1.2] tracking-tight text-foreground sm:text-5xl md:text-6xl">
             <span className="font-medium text-primary">{story.person}</span>
             <span className="text-foreground/85">
-              , who was told by {story.skeptic} that
+              {t.told}{story.skeptic}{t.thatQuoted}
             </span>
-            <span className="italic"> "you'll never {story.lowExpectation},"</span>
-            <span className="text-foreground/85"> went on to </span>
+            <span className="italic"> {t.youllNever}{story.lowExpectation},"</span>
+            <span className="text-foreground/85">{t.wentOn}</span>
             <span className="text-foreground">{story.achievement}.</span>
           </h1>
 
@@ -165,25 +247,25 @@ function Index() {
           <div className="mt-12 flex flex-wrap items-center gap-3">
             <Button onClick={share} variant="default" className="rounded-full">
               <Share2 className="mr-2 h-4 w-4" />
-              Share
+              {t.share}
             </Button>
             <Button onClick={toggleFavorite} variant="outline" className="rounded-full">
               <Heart
                 className={`mr-2 h-4 w-4 ${isFavorite ? "fill-current text-primary" : ""}`}
               />
-              {isFavorite ? "Saved" : "Save"}
+              {isFavorite ? t.saved : t.save}
             </Button>
             <button
               onClick={revealNext}
               className="ml-auto text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground transition-colors hover:text-foreground"
             >
-              Reveal another →
+              {t.revealNext}
             </button>
           </div>
         </main>
 
         <footer className="pt-8 text-center text-xs text-muted-foreground">
-          One story a day. Come back tomorrow.
+          {t.footer}
         </footer>
       </div>
 
@@ -192,6 +274,7 @@ function Index() {
         onOpenChange={setSettingsOpen}
         profile={profile}
         setProfile={setProfile}
+        lang={lang}
       />
 
       <FavoritesDialog
@@ -199,7 +282,33 @@ function Index() {
         onOpenChange={setFavOpen}
         favorites={favorites}
         onRemove={(id) => setFavorites((prev) => prev.filter((x) => x !== id))}
+        lang={lang}
       />
+    </div>
+  );
+}
+
+function LangToggle({ lang, onChange }: { lang: Lang; onChange: (l: Lang) => void }) {
+  return (
+    <div
+      role="group"
+      aria-label="Language"
+      className="mr-1 inline-flex items-center rounded-full border border-border bg-background/40 p-0.5 text-[10px] font-semibold uppercase tracking-widest backdrop-blur"
+    >
+      {(["en", "es"] as const).map((l) => (
+        <button
+          key={l}
+          onClick={() => onChange(l)}
+          aria-pressed={lang === l}
+          className={`rounded-full px-2.5 py-1 transition-colors ${
+            lang === l
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          {l}
+        </button>
+      ))}
     </div>
   );
 }
@@ -229,12 +338,15 @@ function SettingsDialog({
   onOpenChange,
   profile,
   setProfile,
+  lang,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   profile: Profile;
   setProfile: (v: Profile | ((p: Profile) => Profile)) => void;
+  lang: Lang;
 }) {
+  const t = I18N[lang];
   const toggleInterest = (i: Interest) => {
     setProfile((p) => ({
       ...p,
@@ -248,16 +360,16 @@ function SettingsDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="font-serif text-2xl font-normal">Your ritual</DialogTitle>
+          <DialogTitle className="font-serif text-2xl font-normal">{t.yourRitual}</DialogTitle>
           <DialogDescription>
-            We'll tune each day's story to fit you. Saved on this device.
+            {t.ritualDesc}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 pt-2">
           <section>
             <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-              Age range
+              {t.ageRange}
             </Label>
             <div className="mt-3 flex flex-wrap gap-2">
               {ALL_AGE_RANGES.map((a) => {
@@ -274,7 +386,7 @@ function SettingsDialog({
                         : "border-border bg-transparent text-foreground hover:bg-secondary"
                     }`}
                   >
-                    {a}
+                    {lang === "es" ? AGE_ES[a] : a}
                   </button>
                 );
               })}
@@ -283,7 +395,7 @@ function SettingsDialog({
 
           <section>
             <Label className="text-xs font-semibold uppercase tracking-[0.15em] text-muted-foreground">
-              Interests
+              {t.interests}
             </Label>
             <div className="mt-3 space-y-2">
               {ALL_INTERESTS.map((i) => {
@@ -297,7 +409,7 @@ function SettingsDialog({
                       checked={checked}
                       onCheckedChange={() => toggleInterest(i)}
                     />
-                    <span className="text-sm">{i}</span>
+                    <span className="text-sm">{lang === "es" ? INTEREST_ES[i] : i}</span>
                     {checked && <Check className="ml-auto h-4 w-4 text-primary" />}
                   </label>
                 );
@@ -315,32 +427,33 @@ function FavoritesDialog({
   onOpenChange,
   favorites,
   onRemove,
+  lang,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   favorites: string[];
   onRemove: (id: string) => void;
+  lang: Lang;
 }) {
-  const items = STORIES.filter((s) => favorites.includes(s.id));
+  const t = I18N[lang];
+  const items = getStories(lang).filter((s: Story) => favorites.includes(s.id));
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="font-serif text-2xl font-normal">Your library</DialogTitle>
+          <DialogTitle className="font-serif text-2xl font-normal">{t.yourLibrary}</DialogTitle>
           <DialogDescription>
-            {items.length === 0
-              ? "Nothing saved yet. Tap the heart on a story you love."
-              : `${items.length} saved ${items.length === 1 ? "story" : "stories"}.`}
+            {items.length === 0 ? t.emptyLib : t.savedStory(items.length)}
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-[60vh] space-y-4 overflow-y-auto pt-2">
-          {items.map((s) => (
+          {items.map((s: Story) => (
             <div key={s.id} className="group rounded-lg border border-border p-4">
               <div className="flex items-start justify-between gap-3">
                 <h3 className="font-serif text-lg font-medium">{s.person}</h3>
                 <button
                   onClick={() => onRemove(s.id)}
-                  aria-label="Remove"
+                  aria-label={t.remove}
                   className="text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover:opacity-100"
                 >
                   <Trash2 className="h-4 w-4" />
