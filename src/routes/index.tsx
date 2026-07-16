@@ -47,6 +47,7 @@ const I18N = {
     save: "Save",
     revealNext: "Reveal another →",
     footer: "One story a day. Come back tomorrow.",
+    disclaimer: "Cards are AI generated and designed to be motivational and inspirational — always double-check facts.",
     yourRitual: "Your ritual",
     ritualDesc: "We'll tune each day's story to fit you. Saved on this device.",
     ageRange: "Age range",
@@ -77,6 +78,7 @@ const I18N = {
     save: "Guardar",
     revealNext: "Ver otra →",
     footer: "Una historia al día. Vuelve mañana.",
+    disclaimer: "Las tarjetas son generadas por IA y diseñadas para ser motivadoras e inspiradoras; siempre verifica los hechos.",
     yourRitual: "Tu ritual",
     ritualDesc: "Ajustaremos la historia diaria a ti. Guardado en este dispositivo.",
     ageRange: "Rango de edad",
@@ -264,7 +266,11 @@ function Index() {
           </div>
         </main>
 
-        <footer className="pt-8 text-center text-xs text-muted-foreground">
+        <p className="text-center text-[10px] leading-relaxed text-muted-foreground/70">
+          {t.disclaimer}
+        </p>
+
+        <footer className="pt-6 text-center text-xs text-muted-foreground">
           {t.footer}
         </footer>
       </div>
