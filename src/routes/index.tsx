@@ -47,6 +47,7 @@ const I18N = {
     save: "Save",
     revealNext: "Reveal another →",
     footer: "One story a day. Come back tomorrow.",
+    disclaimer: "Cards are AI generated and designed to be motivational and inspirational — always double-check facts.",
     yourRitual: "Your ritual",
     ritualDesc: "We'll tune each day's story to fit you. Saved on this device.",
     ageRange: "Age range",
