@@ -266,7 +266,11 @@ function Index() {
           </div>
         </main>
 
-        <footer className="pt-8 text-center text-xs text-muted-foreground">
+        <p className="text-center text-[10px] leading-relaxed text-muted-foreground/70">
+          {t.disclaimer}
+        </p>
+
+        <footer className="pt-6 text-center text-xs text-muted-foreground">
           {t.footer}
         </footer>
       </div>
