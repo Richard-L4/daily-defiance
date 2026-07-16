@@ -78,6 +78,7 @@ const I18N = {
     save: "Guardar",
     revealNext: "Ver otra →",
     footer: "Una historia al día. Vuelve mañana.",
+    disclaimer: "Las tarjetas son generadas por IA y diseñadas para ser motivadoras e inspiradoras; siempre verifica los hechos.",
     yourRitual: "Tu ritual",
     ritualDesc: "Ajustaremos la historia diaria a ti. Guardado en este dispositivo.",
     ageRange: "Rango de edad",
