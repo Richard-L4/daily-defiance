@@ -294,6 +294,9 @@ function Index() {
         onOpenChange={setFavOpen}
         favorites={favorites}
         onRemove={(id) => setFavorites((prev) => prev.filter((x) => x !== id))}
+        onRemoveMany={(ids) =>
+          setFavorites((prev) => prev.filter((x) => !ids.includes(x)))
+        }
         lang={lang}
       />
     </div>
