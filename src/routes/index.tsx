@@ -442,16 +442,41 @@ function FavoritesDialog({
   onOpenChange,
   favorites,
   onRemove,
+  onRemoveMany,
   lang,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   favorites: string[];
   onRemove: (id: string) => void;
+  onRemoveMany: (ids: string[]) => void;
   lang: Lang;
 }) {
   const t = I18N[lang];
   const items = getStories(lang).filter((s: Story) => favorites.includes(s.id));
+  const [selected, setSelected] = useState<string[]>([]);
+
+  useEffect(() => {
+    setSelected((prev) => prev.filter((id) => favorites.includes(id)));
+  }, [favorites]);
+
+  const toggleSelected = (id: string) =>
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+
+  const multi = items.length >= 2;
+  const hasSelected = selected.length > 0;
+
+  const handleClear = () => {
+    if (items.length === 1) {
+      onRemove(items[0].id);
+    } else if (hasSelected) {
+      onRemoveMany(selected);
+      setSelected([]);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
@@ -465,7 +490,21 @@ function FavoritesDialog({
           {items.map((s: Story) => (
             <div key={s.id} className="group rounded-lg border border-border p-4">
               <div className="flex items-start justify-between gap-3">
-                <h3 className="font-serif text-lg font-medium">{s.person}</h3>
+                <div className="flex items-start gap-3">
+                  {multi && (
+                    <button
+                      onClick={() => toggleSelected(s.id)}
+                      aria-label="Select"
+                      aria-pressed={selected.includes(s.id)}
+                      className={`mt-1.5 h-4 w-4 shrink-0 rounded-full border transition-all ${
+                        selected.includes(s.id)
+                          ? "border-primary bg-primary ring-2 ring-primary/30"
+                          : "border-muted-foreground/40 bg-transparent hover:border-foreground"
+                      }`}
+                    />
+                  )}
+                  <h3 className="font-serif text-lg font-medium">{s.person}</h3>
+                </div>
                 <button
                   onClick={() => onRemove(s.id)}
                   aria-label={t.remove}
@@ -478,6 +517,23 @@ function FavoritesDialog({
             </div>
           ))}
         </div>
+        {items.length > 0 && (
+          <div className="pt-2">
+            <Button
+              onClick={handleClear}
+              disabled={multi && !hasSelected}
+              variant="outline"
+              className="w-full rounded-full"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              {items.length === 1
+                ? t.clearFavorite
+                : hasSelected
+                  ? t.clearSelected
+                  : t.clearFavorites}
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
