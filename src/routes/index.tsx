@@ -160,12 +160,14 @@ function Index() {
     return pickStory(key, profile.interests, profile.age, undefined, lang);
   }, [profile, seed, lang]);
 
-  const dateLabel = new Date().toLocaleDateString(lang === "es" ? "es-ES" : undefined, {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+  const dateLabel = mounted
+    ? new Date().toLocaleDateString(lang === "es" ? "es-ES" : "en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      })
+    : "";
 
   const isFavorite = favorites.includes(story.id);
 
@@ -227,7 +229,7 @@ function Index() {
         {/* Story */}
         <main className="flex flex-1 flex-col justify-center py-16">
           <p className="text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground">
-            {dateLabel}
+            {dateLabel || "\u00a0"}
           </p>
           <p className="mt-3 font-serif text-sm italic text-muted-foreground">
             {t.todaysStory}
